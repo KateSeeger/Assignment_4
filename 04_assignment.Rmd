@@ -1,0 +1,173 @@
+---
+title: 'Assignment #4'
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r libraries}
+library(tidyverse)         # for graphing and data cleaning
+library(dbplyr)            # for SQL query "cheating" - part of tidyverse but needs to be loaded separately
+library(mdsr)              # for accessing some databases - goes with Modern Data Science with R textbook
+library(RMySQL)            # for accessing MySQL databases
+library(RSQLite)           # for accessing SQLite databases
+theme_set(theme_minimal()) # Lisa's favorite theme
+```
+
+When you finish the assignment, remove the `#` from the options chunk at the top, so that messages and warnings aren't printed. If you are getting errors in your code, add `error = TRUE` so that the file knits. I would recommend not removing the `#` until you are completely finished.
+
+## Put it on GitHub!        
+
+From now on, GitHub should be part of your routine when doing assignments. I recommend making it part of your process anytime you are working in R, but I'll make you show it's part of your process for assignments.
+
+**Task**: When you are finished with the assignment, post a link below to the GitHub repo for the assignment. Make sure the link goes to a spot in the repo where I can easily find this assignment. For example, if you have a website with a blog and post the assignment as a blog post, link to the post's folder in the repo. As an example, I've linked to my GitHub stacking material [here](https://github.com/llendway/ads_website/tree/master/_posts/2021-03-22-stacking).
+
+[Kate's Repo](https://github.com/KateSeeger/Assignment_4.git)
+
+## SQL
+
+You will use the `airlines` data from the SQL database that I used in the example in the [tutorial](https://advanced-ds-in-r.netlify.app/posts/2021-03-29-sqlinr/). Be sure to include the chunk to connect to the database here. And, when you are finished, disconnect. You may need to reconnect throughout as it times out after a while.
+
+```{r}
+con_air <- dbConnect(RMySQL::MySQL(), 
+                     dbname = "airlines", 
+                     host = "mdsr.cdc7tgkkqd0n.us-east-1.rds.amazonaws.com", 
+                     user = "mdsr_public", 
+                     password = "ImhsmflMDSwR")
+```
+
+**Tasks**:
+
+1. Create a SQL chunk and an equivalent R code chunk that does the following: for each airport (with its name, not code), year, and month find the total number of departing flights, the distinct destinations to which they flew, the average length of the flight, the average distance of the flight, and the proportion of flights that arrived more than 20 minutes late. In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code). 
+
+```{r}
+# flight <- tbl(con_air, 'flights') %>% 
+#   head(10000)
+# 
+# show_query(flight)
+# 
+# flights_processed <- flight %>% 
+#   group_by(dest, year, month) %>% 
+#   summarise(n_flights = n(),
+#             num_dest = n_distinct(dest),
+#             avg_length = mean(air_time),
+#             avg_distance = mean(distance),
+#             prop_late_over20 = mean(arr_delay > 20)) %>% 
+#   arrange(desc(prop_late_over20))
+# flights_processed
+```
+
+
+
+```{r}
+flights_sql<-
+  tbl(con_air, 
+      sql(
+      "
+  SELECT
+  dest,
+  year,
+  month,
+  COUNT(*) AS n_flights,
+  COUNT(DISTINCT(dest)) as num_dest,
+  AVG(air_time) AS avg_length,
+  AVG(distance) AS avg_distance,
+  AVG(arr_delay > 20) AS prop_late_over20
+FROM (SELECT * FROM flights LIMIT 10000) `fl`
+GROUP BY dest, year, month
+ORDER BY `prop_late_over20` DESC" 
+      )
+  )
+  
+  
+flights_sql
+```
+
+
+
+  - With the dataset you wrote out, create a graph that helps illustrate the "worst" airports in terms of late arrivals. You have some freedom in how you define worst and you may want to consider some of the other variables you computed. Do some theming to make your graph look glamorous (those of you who weren't in my intro data science class this year may want to watch Will Chase's [Glamour of Graphics](https://www.youtube.com/watch?v=h5cTacaWE6I) talk for inspiration).
+
+
+```{r}
+flights_sql_eight <- flights_sql %>%
+  group_by(dest) %>%
+  arrange(desc(prop_late_over20)) %>%
+  head(8)
+
+flights_sql_eight %>%
+  ggplot(aes(x = prop_late_over20,
+             y = fct_reorder(dest, prop_late_over20, median))) +
+  geom_col(fill = 'lightblue') +
+  scale_x_continuous(expand = c(0,0),
+                     labels = scales::percent) +
+  labs(x = "",
+       y = "",
+       title = 'Airports with the High Proportion of Late Arrivals') +
+  theme_minimal()
+
+
+```
+  
+  
+  - Although your graph was truly inspirational, you've been requested to "boil it down to a few numbers." Some people just don't appreciate all that effort you put in. And, you need to use the already summarized data that you already pulled in from SQL. Create a table with 6 or fewer rows and 3 or fewer columns that summarizes which airport is the "worst" in terms of late arrivals. Be careful with your calculations. You may consider using the `kable`, `kableExtra`, or `gt` packages to make your table look truly spectacular.
+  
+  
+```{r}
+library(kableExtra)
+
+flights_sql %>%
+  head(6) %>%
+  kbl() %>%
+  kable_styling(bootstrap_options = c("border", "hover", "condensed"), full_width = F, position = "center", html_font = "Times_New Roman") 
+
+```
+
+  
+2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
+
+Find the total number of flights, origins and carriers in all years
+
+
+```{sql connection=con_air}
+SELECT
+  year,
+  COUNT(*) as `n_flights`,
+  COUNT(DISTINCT(origin)) as num_origin,
+  COUNT(DISTINCT(carrier)) as num_carriers
+FROM (SELECT * FROM flights LIMIT 10000) `fl`
+```
+
+
+## Shiny app
+
+If you are new to Shiny apps or it's been awhile since you've made one, visit the Shiny links on our course [Resource](https://advanced-ds-in-r.netlify.app/resources.html) page. 
+
+Check out my Shiny tips [here](https://github.com/llendway/shiny_tips). 
+
+Everyone should watch the [Theming Shiny](https://youtu.be/b9WWNO4P2nY) talk by Carson Sievert so you can make your app look amazing.
+
+**Tasks:**
+
+* Set up a separate project and GitHub repo for this app. The app needs to be created in a file called *exactly* app.R that is also in the project folder.  
+* At the top of the file, load any libraries and data you will use in the app.  
+* Use whatever data you'd like and create an app. It doesn't have to be super fancy, BUT it needs to incorporate all three of the new techniques I showed in the [Shiny tips](https://github.com/llendway/shiny_tips) - `reactive()`, referencing variable names, and updating a UI input with other UI input. 
+* Use the `bslib` to theme your shiny app!  
+* Publish your app to [shinyapps.io](https://www.shinyapps.io/). There are instructions for doing that on the tutorial I linked to above.   
+* Write a paragraph or two describing your app on your website! Link to the app and your GitHub repository in your post. Include a link to your post here. 
+
+
+## Function Friday problems
+
+I will link to these separately. They will be posted by Tuesday.
+
+
+REMEMBER TO ADD YOUR GITHUB LINK AT THE TOP OF THE PAGE AND UNCOMMENT THE `knitr` OPTIONS.
+
+
