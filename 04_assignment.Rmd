@@ -144,6 +144,8 @@ Everyone should watch the [Theming Shiny](https://youtu.be/b9WWNO4P2nY) talk by 
 * Publish your app to [shinyapps.io](https://www.shinyapps.io/). There are instructions for doing that on the tutorial I linked to above.   
 * Write a paragraph or two describing your app on your website! Link to the app and your GitHub repository in your post. Include a link to your post here. 
 
+[Kate's Shiny App](https://kateseeger.shinyapps.io/shiny/)
+
 
 ## Function Friday problems
 
