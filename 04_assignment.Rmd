@@ -47,24 +47,6 @@ con_air <- dbConnect(RMySQL::MySQL(),
 
 1. Create a SQL chunk and an equivalent R code chunk that does the following: for each airport (with its name, not code), year, and month find the total number of departing flights, the distinct destinations to which they flew, the average length of the flight, the average distance of the flight, and the proportion of flights that arrived more than 20 minutes late. In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code). 
 
-```{r}
-# flight <- tbl(con_air, 'flights') %>% 
-#   head(10000)
-# 
-# show_query(flight)
-# 
-# flights_processed <- flight %>% 
-#   group_by(dest, year, month) %>% 
-#   summarise(n_flights = n(),
-#             num_dest = n_distinct(dest),
-#             avg_length = mean(air_time),
-#             avg_distance = mean(distance),
-#             prop_late_over20 = mean(arr_delay > 20)) %>% 
-#   arrange(desc(prop_late_over20))
-# flights_processed
-```
-
-
 
 ```{r}
 flights_sql<-
