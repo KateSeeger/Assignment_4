@@ -145,6 +145,8 @@ Everyone should watch the [Theming Shiny](https://youtu.be/b9WWNO4P2nY) talk by 
 * Write a paragraph or two describing your app on your website! Link to the app and your GitHub repository in your post. Include a link to your post here. 
 
 [Kate's Shiny App](https://kateseeger.shinyapps.io/shiny/)
+[Kate's app.R GitHub](https://github.com/KateSeeger/shiny.git)
+[Kate's Netifly Website](https://kateseeger.netlify.app/)
 
 
 ## Function Friday problems
