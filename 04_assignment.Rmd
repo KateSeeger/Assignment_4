@@ -18,6 +18,7 @@ library(dbplyr)            # for SQL query "cheating" - part of tidyverse but ne
 library(mdsr)              # for accessing some databases - goes with Modern Data Science with R textbook
 library(RMySQL)            # for accessing MySQL databases
 library(RSQLite)           # for accessing SQLite databases
+library(ggthemes)
 theme_set(theme_minimal()) # Lisa's favorite theme
 ```
 
@@ -43,6 +44,7 @@ con_air <- dbConnect(RMySQL::MySQL(),
                      password = "ImhsmflMDSwR")
 ```
 
+
 **Tasks**:
 
 1. Create a SQL chunk and an equivalent R code chunk that does the following: for each airport (with its name, not code), year, and month find the total number of departing flights, the distinct destinations to which they flew, the average length of the flight, the average distance of the flight, and the proportion of flights that arrived more than 20 minutes late. In the R code chunk, write this out to a dataset. (HINT: 1. start small! 2. you may want to do the R part first and use it to "cheat" into the SQL code). 
@@ -54,13 +56,14 @@ flights_sql<-
       sql(
       "
   SELECT
+  origin,
   dest,
   year,
   month,
   COUNT(*) AS n_flights,
   COUNT(DISTINCT(dest)) as num_dest,
-  AVG(air_time) AS avg_length,
-  AVG(distance) AS avg_distance,
+  AVG(air_time) AS avg_time,
+  AVG(distance) AS avg_dist,
   AVG(arr_delay > 20) AS prop_late_over20
 FROM (SELECT * FROM flights LIMIT 10000) `fl`
 GROUP BY dest, year, month
@@ -114,16 +117,52 @@ flights_sql %>%
   
 2. Come up with your own interesting question that data in the airlines database can help you answer. Write a SQL query and equivalent R code chunk to extract the data you need and create an elegant graph to help answer the question. Be sure to write down the question so it is clear. 
 
-Find the total number of flights, origins and carriers in all years
+What is the proportion of flights that are late from each carrier?
 
 
 ```{sql connection=con_air}
-SELECT
+SELECT 
+  carrier, 
+  dep_delay, 
   year,
-  COUNT(*) as `n_flights`,
-  COUNT(DISTINCT(origin)) as num_origin,
-  COUNT(DISTINCT(carrier)) as num_carriers
-FROM (SELECT * FROM flights LIMIT 10000) `fl`
+  (dep_delay > 0) as late_delays
+FROM flights
+LIMIT 20;
+```
+```{sql connection=con_air}
+SELECT 
+  carrier, 
+  AVG(dep_delay > 0) AS prop_late
+FROM flights
+GROUP BY carrier
+ORDER BY `prop_late` DESC;
+```
+```{r}
+departedflights_sql<-
+  tbl(con_air, 
+      sql(
+        " SELECT 
+  carrier, 
+  AVG(dep_delay > 0) AS prop_late
+FROM flights
+GROUP BY carrier
+ORDER BY `prop_late` DESC"
+        
+      )
+  )
+
+departedflights_sql
+
+```
+```{r}
+departedflights_sql %>%
+  ggplot(aes(y = prop_late, 
+             x = carrier)) +
+  geom_point() + 
+  labs(title = "Proportion of Flights that are Late per Carrier", 
+       x = "", 
+       y = "") + 
+  theme_economist()
 ```
 
 
